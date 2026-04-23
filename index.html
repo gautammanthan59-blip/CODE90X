@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCM Code90x Network</title>
+    
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load React -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Load Babel to compile JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        // --- Firebase Imports (Using Browser CDNs) ---
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
+
+        // Extract React hooks from the global React object
+        const { useState, useMemo, useEffect } = React;
+
+        // --- Inline Icons ---
+        const IconWrapper = ({ children, className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            {children}
+          </svg>
+        );
+
+        const ChevronRight = (p) => <IconWrapper {...p}><polyline points="9 18 15 12 9 6"/></IconWrapper>;
+        const ChevronDown = (p) => <IconWrapper {...p}><polyline points="6 9 12 15 18 9"/></IconWrapper>;
+        const Search = (p) => <IconWrapper {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></IconWrapper>;
+        const User = (p) => <IconWrapper {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconWrapper>;
+        const Users = (p) => <IconWrapper {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconWrapper>;
+        const Building2 = (p) => <IconWrapper {...p}><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></IconWrapper>;
+        const MinusSquare = (p) => <IconWrapper {...p}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="8" y1="12" x2="16" y2="12"/></IconWrapper>;
+        const PlusSquare = (p) => <IconWrapper {...p}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></IconWrapper>;
+        const Sparkles = (p) => <IconWrapper {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></IconWrapper>;
+        const X = (p) => <IconWrapper {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconWrapper>;
+        const Loader2 = (p) => <IconWrapper {...p}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></IconWrapper>;
+        const MessageCircle = (p) => <IconWrapper {...p}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></IconWrapper>;
+        const Trophy = (p) => <IconWrapper {...p}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></IconWrapper>;
+        const Target = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></IconWrapper>;
+        const AlertCircle = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></IconWrapper>;
+        const TrendingUp = (p) => <IconWrapper {...p}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></IconWrapper>;
+        const Globe = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></IconWrapper>;
+        const Calculator = (p) => <IconWrapper {...p}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></IconWrapper>;
+        const Send = (p) => <IconWrapper {...p}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></IconWrapper>;
+        const UserPlus = (p) => <IconWrapper {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></IconWrapper>;
+        const Cloud = (p) => <IconWrapper {...p}><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></IconWrapper>;
+        const CloudOff = (p) => <IconWrapper {...p}><path d="m2 2 20 20"/><path d="M5.78 10.22A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 2.27-.61"/><path d="M22.46 16.5A4.5 4.5 0 0 0 19.5 10h-1.79A7 7 0 0 0 8.05 4.81"/></IconWrapper>;
+
+        // --- Default Data ---
+        const defaultOrgData = {
+          name: "MANINDER", type: "root", growth: 55, prospects: 0, badges: ['👑'],
+          children: [
+            {
+              name: "TEKCHAND", type: "manager", growth: 40, prospects: 0, lastContacted: "2026-04-10", badges: ['🌟'],
+              children: [
+                {
+                  name: "(Core Team - Tek Chand Ji)", type: "group", growth: 5, prospects: 0,
+                  children: [
+                    { name: "Group A", type: "group", growth: 3, prospects: 0, children: [{name: "Sanjay mukhiya"}, {name: "Baliram yadav"}, {name: "Ujara paswan"}, {name: "Manoj Kumar"}, {name: "Pawan Kumar"}] },
+                    { name: "Group B", type: "group", growth: 2, prospects: 0, children: [{name: "Surjit Singh"}, {name: "Jarnail Singh"}, {name: "Bhagwan Jadhav"}, {name: "Ramesh Kumar babbi"}, {name: "Mansoor"}] }
+                  ]
+                },
+                {
+                  name: "SURESH KOHLI", type: "manager", growth: 35, prospects: 0, lastContacted: "2026-04-15",
+                  children: [
+                    {
+                      name: "SUMESH", type: "manager", growth: 30, prospects: 0, lastContacted: "2026-04-12",
+                      children: [
+                        {
+                          name: "(Core Team - Sumesh Ji)", type: "group", growth: 6, prospects: 0,
+                          children: [
+                            { name: "Group A", type: "group", growth: 3, prospects: 0, children: [{name: "Rampal Ji"}, {name: "Raksha Ram ji"}, {name: "Shri Ram ji"}, {name: "Lalit Kumar ji"}, {name: "Baljeet Kaur ji"}] },
+                            { name: "Group B", type: "group", growth: 3, prospects: 0, children: [{name: "Renu ji"}, {name: "Priyanka Ji"}, {name: "Jai Parkash ji"}, {name: "Divya Gauba ji"}, {name: "Anita ji"}] }
+                          ]
+                        },
+                        {
+                          name: "SHAILENDRA SHARMA", type: "manager", growth: 8, prospects: 0, lastContacted: "2026-04-18",
+                          children: [
+                            { name: "A Group", type: "group", growth: 4, prospects: 0, children: [{name: "Rajkumar ji"}, {name: "Pavan ji"}, {name: "Sanjit ji"}, {name: "Babu Sahab ji"}, {name: "Rajani ji"}] },
+                            { name: "B Group", type: "group", growth: 4, prospects: 0, children: [{name: "Pinki ji"}, {name: "Tuntun ji"}, {name: "Mukesh Ji"}, {name: "Ramchandra ji"}, {name: "Ritic Mohan ji"}] }
+                          ]
+                        },
+                        {
+                          name: "KRISHNA (5)", type: "manager", growth: 20, prospects: 0, lastContacted: "2026-04-16", badges: ['🔥'],
+                          children: [
+                            { name: "Team Arun Pandit Ji", type: "group", growth: 3, prospects: 0, children: [{name: "Dev Narayan Yadav & Bharti Kumari"}, {name: "Shambhu Ram"}, {name: "Pankaj Kumar Yadav"}, {name: "Vidya Nand Yadav"}, {name: "Gopal Yadav"}] },
+                            { name: "Team Shatrughan Gupta Ji", type: "group", growth: 4, prospects: 0, children: [{name: "Varinder Kumar Yadav"}, {name: "Manoj Kumar Yadav"}, {name: "Ram Pravesh Kumar"}, {name: "Sanjay Sah"}, {name: "Kanchan Kumari & Sandeep Kumar"}] },
+                            {
+                              name: "ARUN PD.", type: "manager", growth: 10, prospects: 0, lastContacted: "2026-04-14",
+                              children: [
+                                { name: "B Leg", type: "group", growth: 4, prospects: 0, children: [{name: "Santosh Kumar"}, {name: "Rakesh Kumar"}, {name: "Akhtar Ansari"}, {name: "Sanjeev Kumar"}, {name: "Sonu Kumar"}] },
+                                { name: "A Leg", type: "group", growth: 4, prospects: 0, children: [{name: "Raj Kishore"}, {name: "Intyaz Malik"}, {name: "Santosh Pandit"}, {name: "Pankaj Kumar"}, {name: "Rajesh Sah Mum"}] },
+                                {
+                                  name: "MANIKANT", type: "manager", growth: 2, prospects: 0, lastContacted: "2026-04-01",
+                                  children: [
+                                    {
+                                      name: "RAM SWAROOP", type: "manager", growth: 2, prospects: 0, lastContacted: "2026-04-10",
+                                      children: [
+                                        { name: "Group A", type: "group", growth: 1, prospects: 0, children: [{name: "Resham Singh"}, {name: "Dalip Kumar Shah"}, {name: "Shravan Kumar"}, {name: "Mandeep Singh"}, {name: "Satnam Singh"}] },
+                                        { name: "Group B", type: "group", growth: 1, prospects: 0, children: [{name: "Raj Kumar"}, {name: "Vipnesh"}, {name: "Vinod Kumar"}, {name: "Gulab Upadhya"}, {name: "Ashok Kumar"}] }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              name: "SHATRUGHAN (10)", type: "manager", growth: 5, prospects: 0, lastContacted: "2026-04-15", badges: ['🚀'],
+                              children: [
+                                { name: "Group A", type: "group", growth: 3, prospects: 0, children: [{name: "Bandhan Kumari"}, {name: "Ankush Kr Gupta"}, {name: "Ridhi Kumari"}, {name: "Manju Devi"}, {name: "Rajni"}] },
+                                { name: "Group B", type: "group", growth: 2, prospects: 0, children: [{name: "Sarwan Singh"}, {name: "Pintu Kumar"}, {name: "Manoj Kr Yadav"}, {name: "Sanjeev Kr Yadav"}, {name: "Suraj Kr Yadav"}] }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              name: "RAJAN", type: "manager", growth: 15, prospects: 0, lastContacted: "2026-04-16", badges: ['🏆'],
+              children: [
+                {
+                  name: "(Core Team - Rajan Ji)", type: "group", growth: 8, prospects: 0,
+                  children: [
+                    { name: "Group A", type: "group", growth: 4, prospects: 0, children: [{name: "Manjit Kumar"}, {name: "Tiath"}, {name: "Madhav Kundi"}, {name: "Balvir Kauldhar"}, {name: "Ashar Singh"}] },
+                    { name: "Group B", type: "group", growth: 4, prospects: 0, children: [{name: "Sandeep Singh"}, {name: "Dr. Jasvir Kumar"}, {name: "Rakesh Akalpur"}, {name: "Rajni Goraya"}, {name: "Dalbir Chand"}] }
+                  ]
+                },
+                {
+                  name: "RAVINDER", type: "manager", growth: 7, prospects: 0, lastContacted: "2026-03-25",
+                  children: [
+                    { name: "Group A", type: "group", growth: 4, prospects: 0, children: [{name: "Kuldeep Kumar Kandola"}, {name: "Sukhjit Kaur Partappura"}, {name: "Sarabjit Kaur Nurmahal"}, {name: "Harjinder Kumar"}, {name: "Satwinder Singh Kandola"}] },
+                    { name: "Group B", type: "group", growth: 3, prospects: 0, children: [{name: "Amritpal Kaur Nurmahal"}, {name: "Khushdeep Nurmahal"}, {name: "Narinderpal Singh Chuheki"}, {name: "Nihal Kaur"}, {name: "Narinder Kaur Pharwala"}] }
+                  ]
+                }
+              ]
+            }
+          ]
+        };
+
+        // --- Helpers ---
+        const calculateTotalTeamSize = (node) => {
+          if (!node.children || node.children.length === 0) return 1;
+          return node.children.reduce((acc, child) => acc + calculateTotalTeamSize(child), 0);
+        };
+
+        const isNeedsFollowUp = (lastContacted) => {
+          if (!lastContacted) return false;
+          const daysSince = (new Date() - new Date(lastContacted)) / (1000 * 3600 * 24);
+          return daysSince > 14; 
+        };
+
+        const extractLeaderboard = (node, list = []) => {
+          if (node.type === 'manager' || node.type === 'group') {
+            const teamSize = calculateTotalTeamSize(node);
+            const actualGrowth = Math.min(node.growth || 0, teamSize);
+            list.push({ name: node.name, growth: actualGrowth, size: teamSize, type: node.type });
+          }
+          if (node.children) {
+            node.children.forEach(child => extractLeaderboard(child, list));
+          }
+          return list.sort((a, b) => b.growth - a.growth).slice(0, 10);
+        };
+
+        const addNodeToTree = (currentTree, parentName, newNode) => {
+          if (currentTree.name === parentName) {
+            return {
+              ...currentTree,
+              children: [...(currentTree.children || []), newNode]
+            };
+          }
+          if (currentTree.children) {
+            return {
+              ...currentTree,
+              children: currentTree.children.map(child => addNodeToTree(child, parentName, newNode))
+            };
+          }
+          return currentTree;
+        };
+
+        // --- AI API Logic ---
+        const generateWithGemini = async (prompt) => {
+          // Free environment limits: AI calls might be restricted when deployed outside the original host.
+          alert("AI Generation requires an active API key when deployed to your own domain.");
+          return "This is a placeholder message. To use AI on your own domain, you will need to add a Google Gemini API Key in the code.";
+        };
+
+        // --- Tree Node Component ---
+        const TreeNode = ({ node, defaultExpanded, searchTerm, onAiAction, onAddAction, loadingNodeName }) => {
+          const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+          const hasChildren = node.children && node.children.length > 0;
+          const needsFollowUp = isNeedsFollowUp(node.lastContacted);
+
+          useEffect(() => {
+            if (searchTerm) setIsExpanded(true);
+            else setIsExpanded(defaultExpanded);
+          }, [searchTerm, defaultExpanded]);
+
+          const getIcon = () => {
+            if (node.type === 'root') return <Building2 className="w-5 h-5 text-amber-300" />;
+            if (node.type === 'manager') return <User className="w-4 h-4 text-amber-500" />;
+            if (node.type === 'group') return <Users className="w-4 h-4 text-blue-300" />;
+            return <User className="w-4 h-4 text-slate-500" />;
+          };
+
+          const highlightText = (text, highlight) => {
+            if (!highlight.trim()) return text;
+            const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+            return parts.map((part, index) => 
+              part.toLowerCase() === highlight.toLowerCase() ? <span key={index} className="bg-amber-500/30 text-amber-200 px-1 rounded">{part}</span> : part
+            );
+          };
+
+          const isLoadingThisNode = loadingNodeName === node.name;
+          const teamSize = calculateTotalTeamSize(node);
+          const displayGrowth = Math.min(node.growth || 0, teamSize);
+
+          return (
+            <div className="ml-2 sm:ml-6 mt-1">
+              <div 
+                className={`flex items-center justify-between py-2 px-3 border transition-all duration-200 group rounded-lg
+                  ${hasChildren ? 'cursor-pointer hover:bg-[#152340] border-b-amber-500/10 border-t-transparent border-l-transparent border-r-transparent' : 'bg-[#0c1527] border border-amber-500/5 shadow-inner'}
+                  ${needsFollowUp ? 'border-l-red-500/50 border-l-2' : ''}
+                `}
+                onClick={() => hasChildren && setIsExpanded(!isExpanded)}
+              >
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <div className="flex items-center justify-center w-5 h-5 mr-1 shrink-0">
+                    {hasChildren ? (
+                      isExpanded ? <ChevronDown className="w-4 h-4 text-amber-500/60" /> : <ChevronRight className="w-4 h-4 text-amber-500/60" />
+                    ) : <div className="w-4 h-4" />}
+                  </div>
+                  
+                  <div className="bg-[#1a2c4e]/50 p-1.5 rounded shadow-sm border border-amber-500/20 shrink-0 relative">
+                    {getIcon()}
+                    {needsFollowUp && (
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                      </span>
+                    )}
+                  </div>
+                  
+                  <span className={`text-sm sm:text-base tracking-wide flex items-center gap-1 ${hasChildren ? 'font-semibold text-amber-50' : 'text-blue-200'}`}>
+                    {highlightText(node.name, searchTerm)}
+                    {node.badges && node.badges.map((b, i) => <span key={i} className="text-sm">{b}</span>)}
+                  </span>
+
+                  {hasChildren && (
+                    <div className="flex items-center ml-2 gap-2 flex-wrap">
+                      <span className="hidden sm:inline-block text-[10px] uppercase tracking-wider font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded">
+                        Team: {teamSize}
+                      </span>
+                      {displayGrowth > 0 && (
+                        <span className="text-[10px] uppercase tracking-wider font-bold bg-green-500/10 text-green-400 border border-green-500/30 px-2 py-0.5 rounded flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" /> +{displayGrowth}
+                        </span>
+                      )}
+                      {node.prospects > 0 && (
+                        <span className="text-[10px] uppercase tracking-wider font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded">
+                          {node.prospects} Prospects
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 shrink-0">
+                  {(node.type === 'root' || node.type === 'manager' || node.type === 'group') && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onAddAction(node); }}
+                      className="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-[#0f1932] hover:bg-green-500/20 text-green-400 border border-green-500/30 transition-colors"
+                      title="Add New Sub-Team or Member"
+                    >
+                      <UserPlus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
+                    </button>
+                  )}
+
+                  {hasChildren && node.type !== 'root' && (
+                    <>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onAiAction(node, 'pitch'); }}
+                        disabled={isLoadingThisNode}
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-[#0f1932] hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 transition-colors"
+                      >
+                        <Target className="w-3 h-3" /> <span className="hidden md:inline">Pitch</span>
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onAiAction(node, 'motivate'); }}
+                        disabled={isLoadingThisNode}
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-[#0f1932] hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-colors"
+                      >
+                        {isLoadingThisNode ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                        <span className="hidden md:inline">Message</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {hasChildren && isExpanded && (
+                <div className="border-l border-amber-500/20 ml-4 pl-2

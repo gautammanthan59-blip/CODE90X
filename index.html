@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,12 +19,7 @@
 <body class="bg-slate-950 text-slate-50">
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module">
-        // --- Firebase Imports (Using Browser CDNs) ---
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
-        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
-
+    <script type="text/babel">
         // Extract React hooks from the global React object
         const { useState, useMemo, useEffect } = React;
 
@@ -194,7 +190,6 @@
 
         // --- AI API Logic ---
         const generateWithGemini = async (prompt) => {
-          // Free environment limits: AI calls might be restricted when deployed outside the original host.
           alert("AI Generation requires an active API key when deployed to your own domain.");
           return "This is a placeholder message. To use AI on your own domain, you will need to add a Google Gemini API Key in the code.";
         };
@@ -313,4 +308,362 @@
               </div>
 
               {hasChildren && isExpanded && (
-                <div className="border-l border-amber-500/20 ml-4 pl-2
+                <div className="border-l border-amber-500/20 ml-4 pl-2 mt-1">
+                  {node.children.map((child, index) => (
+                    <TreeNode 
+                      key={`${child.name}-${index}`} 
+                      node={child} 
+                      defaultExpanded={defaultExpanded}
+                      searchTerm={searchTerm}
+                      onAiAction={onAiAction}
+                      onAddAction={onAddAction}
+                      loadingNodeName={loadingNodeName}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        // --- Main Application Component ---
+        function App() {
+          const [searchTerm, setSearchTerm] = useState("");
+          const [expandAll, setExpandAll] = useState(true);
+          
+          const [treeData, setTreeData] = useState(defaultOrgData);
+          
+          const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+          const [aiResultText, setAiResultText] = useState("");
+          const [aiModalTitle, setAiModalTitle] = useState("");
+          const [selectedLanguage, setSelectedLanguage] = useState("Hindi");
+          const [loadingNodeName, setLoadingNodeName] = useState(null);
+          
+          const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+          const [isGoalSimulatorOpen, setIsGoalSimulatorOpen] = useState(false);
+          const [targetGoal, setTargetGoal] = useState(100);
+
+          const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+          const [addParentNode, setAddParentNode] = useState(null);
+          const [newMemberName, setNewMemberName] = useState("");
+          const [newMemberType, setNewMemberType] = useState("manager");
+
+          const isDbConnected = false; 
+
+          const leaderboardData = useMemo(() => extractLeaderboard(treeData), [treeData]);
+
+          const filteredData = useMemo(() => {
+            if (!searchTerm.trim()) return treeData;
+            const filterTree = (node) => {
+              const matches = node.name.toLowerCase().includes(searchTerm.toLowerCase());
+              if (!node.children) return matches ? node : null;
+              const filteredChildren = node.children.map(child => filterTree(child)).filter(child => child !== null);
+              if (matches || filteredChildren.length > 0) {
+                return { ...node, children: filteredChildren.length > 0 ? filteredChildren : node.children };
+              }
+              return null;
+            };
+            return filterTree(treeData);
+          }, [searchTerm, treeData]);
+
+          const handleSaveNewMember = async () => {
+            if (!newMemberName.trim() || !addParentNode) return;
+            
+            const newNode = {
+              name: newMemberName.trim(),
+              type: newMemberType,
+              growth: 0,
+              prospects: 0,
+              children: []
+            };
+
+            const updatedTree = addNodeToTree(treeData, addParentNode.name, newNode);
+            setTreeData(updatedTree);
+            setIsAddModalOpen(false);
+            setNewMemberName("");
+          };
+
+          const handleAiAction = async (node, type) => {
+            setLoadingNodeName(node.name);
+            let title = type === 'motivate' ? `✨ Message from ${node.name}` : `🎯 Prospecting Pitch for ${node.name}`;
+            try {
+              const responseText = await generateWithGemini("prompt");
+              setAiModalTitle(title);
+              setAiResultText(responseText);
+              setIsAiModalOpen(true);
+            } catch (error) {
+              alert("Failed to generate content.");
+            } finally {
+              setLoadingNodeName(null);
+            }
+          };
+
+          const openWhatsApp = () => {
+            const encodedText = encodeURIComponent(aiResultText);
+            window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-950 bg-gradient-to-br from-blue-950 via-[#050b14] to-black font-sans relative overflow-hidden flex flex-col items-center py-0 sm:py-8 px-0 sm:px-4 text-blue-50">
+              
+              <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-0 opacity-[0.03]">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" className="w-[120vw] sm:w-[90vw] max-w-[800px] text-amber-500">
+                  <path d="M200 40 L340 120 L340 280 L200 360 L60 280 L60 120 Z" stroke="currentColor" strokeWidth="12" fill="none"/>
+                  <text x="200" y="215" fontFamily="sans-serif" fontSize="64" fontWeight="900" textAnchor="middle" fill="currentColor">RCM</text>
+                  <text x="200" y="255" fontFamily="sans-serif" fontSize="20" fontWeight="700" letterSpacing="8" textAnchor="middle" fill="currentColor">CODE90X</text>
+                </svg>
+              </div>
+
+              <div className="w-full max-w-6xl bg-[#0a1122]/80 backdrop-blur-xl shadow-[0_0_50px_-15px_rgba(245,158,11,0.2)] border border-amber-500/20 relative z-10 sm:rounded-2xl overflow-hidden flex flex-col">
+                
+                <div className="bg-gradient-to-r from-[#0b1428] via-[#0f1932] to-[#0b1428] border-b border-amber-500/30 p-4 sm:p-6">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div>
+                      <div className="flex items-center gap-4">
+                        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                          <div className="bg-gradient-to-br from-amber-400 to-amber-600 p-2 rounded-lg shadow-lg shadow-amber-500/20">
+                            <Building2 className="w-6 h-6 sm:w-7 sm:h-7 text-[#0a1122]" />
+                          </div>
+                          <span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500">RCM Business</span> 
+                            <span className="text-amber-500/40 font-light ml-2 text-xl hidden sm:inline">| Team HHG</span>
+                          </span>
+                        </h1>
+                      </div>
+                      <div className="flex items-center gap-3 mt-2">
+                        <p className="text-xs sm:text-sm text-amber-200/60 font-semibold tracking-widest uppercase">Network Growth App</p>
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/30 border border-white/5" title="Running Locally in Browser">
+                           <CloudOff className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Local Data Mode</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+                      <div className="flex items-center bg-[#0c1527] border border-amber-500/30 rounded px-2">
+                        <Globe className="w-4 h-4 text-amber-500/60" />
+                        <select 
+                          value={selectedLanguage} 
+                          onChange={(e) => setSelectedLanguage(e.target.value)}
+                          className="bg-transparent text-amber-200 text-sm font-semibold p-2 outline-none cursor-pointer"
+                        >
+                          <option value="Hindi">Hindi</option>
+                          <option value="English">English</option>
+                          <option value="Punjabi">Punjabi</option>
+                          <option value="Marathi">Marathi</option>
+                        </select>
+                      </div>
+
+                      <button onClick={() => setIsGoalSimulatorOpen(true)} className="flex items-center gap-2 bg-[#0f1932] hover:bg-[#1a2c4e] text-blue-300 border border-blue-500/30 px-3 py-2 rounded text-sm font-semibold transition-colors">
+                        <Calculator className="w-4 h-4" /> <span className="hidden sm:inline">Simulator</span>
+                      </button>
+
+                      <button onClick={() => setIsLeaderboardOpen(true)} className="flex items-center gap-2 bg-[#0f1932] hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-2 rounded text-sm font-semibold transition-colors">
+                        <Trophy className="w-4 h-4 text-amber-500" /> <span className="hidden sm:inline">Leaderboard</span>
+                      </button>
+
+                      <button onClick={() => setExpandAll(!expandAll)} className="flex items-center justify-center bg-[#0f1932] hover:bg-[#1a2c4e] text-amber-400 border border-amber-500/30 w-10 h-10 rounded transition-colors" title="Toggle Expand">
+                        {expandAll ? <MinusSquare className="w-5 h-5" /> : <PlusSquare className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 relative">
+                    <Search className="absolute left-4 top-3.5 h-5 w-5 text-amber-500/60" />
+                    <input
+                      type="text"
+                      className="block w-full pl-12 pr-4 py-3 border border-amber-500/30 rounded-lg bg-[#0c1527] text-amber-50 placeholder-amber-500/40 focus:outline-none focus:ring-2 focus:ring-amber-500/60 transition-all shadow-inner"
+                      placeholder="Search leader, group, or prospect..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 sm:p-6 bg-[#0a1122]/50 min-h-[500px] overflow-x-auto">
+                  {filteredData ? (
+                    <div className="min-w-[600px] pb-12">
+                      <TreeNode 
+                        node={filteredData} 
+                        defaultExpanded={expandAll} 
+                        searchTerm={searchTerm}
+                        onAiAction={handleAiAction}
+                        onAddAction={(node) => { setAddParentNode(node); setIsAddModalOpen(true); }}
+                        loadingNodeName={loadingNodeName}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-amber-500/60 py-16">
+                      <Search className="w-16 h-16 opacity-20 mb-4" />
+                      <p className="text-xl font-semibold">No records found</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Add New Member/Group Modal */}
+              {isAddModalOpen && addParentNode && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                  <div className="bg-[#0a1122] border border-green-500/40 rounded-2xl shadow-[0_0_40px_-10px_rgba(34,197,94,0.3)] w-full max-w-md flex flex-col">
+                    <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 flex justify-between items-center text-white rounded-t-2xl">
+                      <h2 className="text-lg font-bold flex items-center gap-2"><UserPlus className="w-5 h-5" /> Add to Network</h2>
+                      <button onClick={() => setIsAddModalOpen(false)} className="bg-black/20 hover:bg-black/40 p-1 rounded-full"><X className="w-5 h-5" /></button>
+                    </div>
+                    <div className="p-6 bg-[#0f1932]">
+                      <p className="text-blue-200/80 text-sm mb-4">Adding a new member under <span className="font-bold text-amber-400">{addParentNode.name}</span></p>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm text-blue-300 font-semibold mb-1">Name</label>
+                          <input 
+                            type="text" 
+                            value={newMemberName}
+                            onChange={(e) => setNewMemberName(e.target.value)}
+                            placeholder="Enter Leader or Team Name"
+                            className="w-full bg-[#0c1527] border border-blue-500/30 p-3 rounded text-white focus:outline-none focus:border-green-400"
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm text-blue-300 font-semibold mb-1">Type</label>
+                          <select 
+                            value={newMemberType}
+                            onChange={(e) => setNewMemberType(e.target.value)}
+                            className="w-full bg-[#0c1527] border border-blue-500/30 p-3 rounded text-white focus:outline-none focus:border-green-400"
+                          >
+                            <option value="manager">Manager / Leader (Can have sub-teams)</option>
+                            <option value="group">Group / Sub-Team</option>
+                            <option value="individual">Individual Prospect</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 mt-8">
+                        <button 
+                          onClick={() => setIsAddModalOpen(false)} 
+                          className="flex-1 py-3 bg-[#152340] hover:bg-[#1a2c4e] text-blue-300 font-bold rounded-lg transition-colors border border-blue-500/20"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={handleSaveNewMember} 
+                          disabled={!newMemberName.trim()}
+                          className="flex-1 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg transition-colors"
+                        >
+                          Save Locally
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* AI Text Generation Modal */}
+              {isAiModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                  <div className="bg-[#0a1122] border border-amber-500/30 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                    <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 flex justify-between items-center text-[#0a1122] rounded-t-2xl">
+                      <h2 className="text-lg font-bold flex items-center gap-2">{aiModalTitle}</h2>
+                      <button onClick={() => setIsAiModalOpen(false)} className="bg-white/20 hover:bg-white/40 p-1 rounded-full"><X className="w-5 h-5" /></button>
+                    </div>
+                    <div className="p-6 overflow-y-auto bg-[#0f1932] text-blue-50 whitespace-pre-wrap font-medium leading-relaxed">
+                      {aiResultText.replace(/\*\*(.*?)\*\*/g, '$1')}
+                    </div>
+                    <div className="bg-[#0b1428] border-t border-amber-500/20 p-4 flex justify-between gap-2 rounded-b-2xl">
+                      <button onClick={openWhatsApp} className="flex-1 flex justify-center items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transition-colors">
+                        <MessageCircle className="w-5 h-5" /> Send via WhatsApp
+                      </button>
+                      <button onClick={() => { navigator.clipboard.writeText(aiResultText); alert("Copied!"); }} className="flex-1 px-4 py-2 bg-[#1a2c4e] hover:bg-[#233a66] text-amber-400 font-bold rounded-lg border border-amber-500/30 transition-colors">
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Leaderboard Modal */}
+              {isLeaderboardOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                  <div className="bg-[#0a1122] border border-amber-500/30 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+                    <div className="bg-gradient-to-r from-amber-500 to-yellow-400 p-4 flex justify-between items-center text-[#0a1122] rounded-t-2xl">
+                      <h2 className="text-xl font-black flex items-center gap-2"><Trophy className="w-6 h-6" /> Top Performers (30 Days)</h2>
+                      <button onClick={() => setIsLeaderboardOpen(false)} className="bg-black/10 hover:bg-black/20 p-1 rounded-full"><X className="w-5 h-5" /></button>
+                    </div>
+                    <div className="p-4 overflow-y-auto bg-[#0f1932] flex flex-col gap-2 rounded-b-2xl">
+                      {leaderboardData.map((team, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-[#152340] p-3 rounded-lg border border-amber-500/10">
+                          <div className="flex items-center gap-3">
+                            <span className={`font-bold text-lg w-6 text-center ${idx===0?'text-yellow-400':idx===1?'text-slate-300':idx===2?'text-amber-600':'text-blue-500/50'}`}>
+                              #{idx + 1}
+                            </span>
+                            <div>
+                              <p className="font-semibold text-amber-50">{team.name}</p>
+                              <p className="text-xs text-blue-300/60 uppercase">Team Size: {team.size}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-green-400 font-bold flex items-center justify-end gap-1"><TrendingUp className="w-3 h-3"/> +{team.growth}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Goal Simulator Modal */}
+              {isGoalSimulatorOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                  <div className="bg-[#0a1122] border border-blue-500/30 rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center text-white rounded-t-2xl">
+                      <h2 className="text-xl font-bold flex items-center gap-2"><Calculator className="w-6 h-6" /> Growth Simulator</h2>
+                      <button onClick={() => setIsGoalSimulatorOpen(false)} className="bg-white/20 p-1 rounded-full"><X className="w-5 h-5" /></button>
+                    </div>
+                    <div className="p-6 bg-[#0f1932] rounded-b-2xl">
+                      <p className="text-blue-200 text-sm mb-4">Set a target for your total network size and see how much effort is required.</p>
+                      <label className="block text-amber-400 font-semibold mb-2">Target Team Size:</label>
+                      <input 
+                        type="number" 
+                        value={targetGoal} 
+                        onChange={(e) => setTargetGoal(Number(e.target.value))}
+                        className="w-full bg-[#0c1527] border border-blue-500/30 p-3 rounded text-white text-lg font-bold mb-6 focus:outline-none focus:border-blue-400"
+                      />
+                      
+                      <div className="bg-[#152340] p-4 rounded-lg border border-blue-500/10">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-blue-300">Current Total Size:</span>
+                          <span className="font-bold text-white">{calculateTotalTeamSize(treeData)}</span>
+                        </div>
+                        <div className="flex justify-between mb-4 border-b border-blue-500/20 pb-4">
+                          <span className="text-blue-300">Deficit:</span>
+                          <span className="font-bold text-amber-400">
+                            {targetGoal > calculateTotalTeamSize(treeData) ? targetGoal - calculateTotalTeamSize(treeData) : 0} needed
+                          </span>
+                        </div>
+                        
+                        {targetGoal > calculateTotalTeamSize(treeData) && (
+                          <div className="pt-2">
+                            <p className="text-sm text-blue-200 mb-2 font-semibold">Suggested Action Plan:</p>
+                            <ul className="text-xs text-blue-300/80 space-y-2">
+                              <li className="flex items-center gap-2"><Send className="w-3 h-3 text-purple-400"/> Send Pitches to pending prospects.</li>
+                              <li className="flex items-center gap-2"><AlertCircle className="w-3 h-3 text-red-400"/> Follow up with dormant legs.</li>
+                              <li className="flex items-center gap-2"><Trophy className="w-3 h-3 text-amber-400"/> Motivate top growers to push harder.</li>
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          );
+        }
+
+        // --- Render to DOM ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

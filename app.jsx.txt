@@ -1,0 +1,763 @@
+import React, { useState, useMemo, useEffect } from 'react';
+
+// --- Inline Icons (Replacing lucide-react to fix bundler issues) ---
+const IconWrapper = ({ children, className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {children}
+  </svg>
+);
+
+const ChevronRight = (p) => <IconWrapper {...p}><polyline points="9 18 15 12 9 6"/></IconWrapper>;
+const ChevronDown = (p) => <IconWrapper {...p}><polyline points="6 9 12 15 18 9"/></IconWrapper>;
+const Search = (p) => <IconWrapper {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></IconWrapper>;
+const User = (p) => <IconWrapper {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconWrapper>;
+const Users = (p) => <IconWrapper {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconWrapper>;
+const Building2 = (p) => <IconWrapper {...p}><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></IconWrapper>;
+const MinusSquare = (p) => <IconWrapper {...p}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="8" y1="12" x2="16" y2="12"/></IconWrapper>;
+const PlusSquare = (p) => <IconWrapper {...p}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></IconWrapper>;
+const Sparkles = (p) => <IconWrapper {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></IconWrapper>;
+const X = (p) => <IconWrapper {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconWrapper>;
+const Loader2 = (p) => <IconWrapper {...p}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></IconWrapper>;
+const MessageCircle = (p) => <IconWrapper {...p}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></IconWrapper>;
+const Trophy = (p) => <IconWrapper {...p}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></IconWrapper>;
+const Target = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></IconWrapper>;
+const AlertCircle = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></IconWrapper>;
+const TrendingUp = (p) => <IconWrapper {...p}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></IconWrapper>;
+const Globe = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></IconWrapper>;
+const Calculator = (p) => <IconWrapper {...p}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></IconWrapper>;
+const Send = (p) => <IconWrapper {...p}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></IconWrapper>;
+const UserPlus = (p) => <IconWrapper {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></IconWrapper>;
+const Cloud = (p) => <IconWrapper {...p}><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></IconWrapper>;
+const CloudOff = (p) => <IconWrapper {...p}><path d="m2 2 20 20"/><path d="M5.78 10.22A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 2.27-.61"/><path d="M22.46 16.5A4.5 4.5 0 0 0 19.5 10h-1.79A7 7 0 0 0 8.05 4.81"/></IconWrapper>;
+
+// --- Firebase Imports ---
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
+
+// --- Default Data (Used as Seed if Cloud is Empty) ---
+const defaultOrgData = {
+  name: "MANINDER", type: "root", growth: 55, prospects: 0, badges: ['👑'],
+  children: [
+    {
+      name: "TEKCHAND", type: "manager", growth: 40, prospects: 0, lastContacted: "2026-04-10", badges: ['🌟'],
+      children: [
+        {
+          name: "(Core Team - Tek Chand Ji)", type: "group", growth: 5, prospects: 0,
+          children: [
+            { name: "Group A", type: "group", growth: 3, prospects: 0, children: [{name: "Sanjay mukhiya"}, {name: "Baliram yadav"}, {name: "Ujara paswan"}, {name: "Manoj Kumar"}, {name: "Pawan Kumar"}] },
+            { name: "Group B", type: "group", growth: 2, prospects: 0, children: [{name: "Surjit Singh"}, {name: "Jarnail Singh"}, {name: "Bhagwan Jadhav"}, {name: "Ramesh Kumar babbi"}, {name: "Mansoor"}] }
+          ]
+        },
+        {
+          name: "SURESH KOHLI", type: "manager", growth: 35, prospects: 0, lastContacted: "2026-04-15",
+          children: [
+            {
+              name: "SUMESH", type: "manager", growth: 30, prospects: 0, lastContacted: "2026-04-12",
+              children: [
+                {
+                  name: "(Core Team - Sumesh Ji)", type: "group", growth: 6, prospects: 0,
+                  children: [
+                    { name: "Group A", type: "group", growth: 3, prospects: 0, children: [{name: "Rampal Ji"}, {name: "Raksha Ram ji"}, {name: "Shri Ram ji"}, {name: "Lalit Kumar ji"}, {name: "Baljeet Kaur ji"}] },
+                    { name: "Group B", type: "group", growth: 3, prospects: 0, children: [{name: "Renu ji"}, {name: "Priyanka Ji"}, {name: "Jai Parkash ji"}, {name: "Divya Gauba ji"}, {name: "Anita ji"}] }
+                  ]
+                },
+                {
+                  name: "SHAILENDRA SHARMA", type: "manager", growth: 8, prospects: 0, lastContacted: "2026-04-18",
+                  children: [
+                    { name: "A Group", type: "group", growth: 4, prospects: 0, children: [{name: "Rajkumar ji"}, {name: "Pavan ji"}, {name: "Sanjit ji"}, {name: "Babu Sahab ji"}, {name: "Rajani ji"}] },
+                    { name: "B Group", type: "group", growth: 4, prospects: 0, children: [{name: "Pinki ji"}, {name: "Tuntun ji"}, {name: "Mukesh Ji"}, {name: "Ramchandra ji"}, {name: "Ritic Mohan ji"}] }
+                  ]
+                },
+                {
+                  name: "KRISHNA (5)", type: "manager", growth: 20, prospects: 0, lastContacted: "2026-04-16", badges: ['🔥'],
+                  children: [
+                    { name: "Team Arun Pandit Ji", type: "group", growth: 3, prospects: 0, children: [{name: "Dev Narayan Yadav & Bharti Kumari"}, {name: "Shambhu Ram"}, {name: "Pankaj Kumar Yadav"}, {name: "Vidya Nand Yadav"}, {name: "Gopal Yadav"}] },
+                    { name: "Team Shatrughan Gupta Ji", type: "group", growth: 4, prospects: 0, children: [{name: "Varinder Kumar Yadav"}, {name: "Manoj Kumar Yadav"}, {name: "Ram Pravesh Kumar"}, {name: "Sanjay Sah"}, {name: "Kanchan Kumari & Sandeep Kumar"}] },
+                    {
+                      name: "ARUN PD.", type: "manager", growth: 10, prospects: 0, lastContacted: "2026-04-14",
+                      children: [
+                        { name: "B Leg", type: "group", growth: 4, prospects: 0, children: [{name: "Santosh Kumar"}, {name: "Rakesh Kumar"}, {name: "Akhtar Ansari"}, {name: "Sanjeev Kumar"}, {name: "Sonu Kumar"}] },
+                        { name: "A Leg", type: "group", growth: 4, prospects: 0, children: [{name: "Raj Kishore"}, {name: "Intyaz Malik"}, {name: "Santosh Pandit"}, {name: "Pankaj Kumar"}, {name: "Rajesh Sah Mum"}] },
+                        {
+                          name: "MANIKANT", type: "manager", growth: 2, prospects: 0, lastContacted: "2026-04-01",
+                          children: [
+                            {
+                              name: "RAM SWAROOP", type: "manager", growth: 2, prospects: 0, lastContacted: "2026-04-10",
+                              children: [
+                                { name: "Group A", type: "group", growth: 1, prospects: 0, children: [{name: "Resham Singh"}, {name: "Dalip Kumar Shah"}, {name: "Shravan Kumar"}, {name: "Mandeep Singh"}, {name: "Satnam Singh"}] },
+                                { name: "Group B", type: "group", growth: 1, prospects: 0, children: [{name: "Raj Kumar"}, {name: "Vipnesh"}, {name: "Vinod Kumar"}, {name: "Gulab Upadhya"}, {name: "Ashok Kumar"}] }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      name: "SHATRUGHAN (10)", type: "manager", growth: 5, prospects: 0, lastContacted: "2026-04-15", badges: ['🚀'],
+                      children: [
+                        { name: "Group A", type: "group", growth: 3, prospects: 0, children: [{name: "Bandhan Kumari"}, {name: "Ankush Kr Gupta"}, {name: "Ridhi Kumari"}, {name: "Manju Devi"}, {name: "Rajni"}] },
+                        { name: "Group B", type: "group", growth: 2, prospects: 0, children: [{name: "Sarwan Singh"}, {name: "Pintu Kumar"}, {name: "Manoj Kr Yadav"}, {name: "Sanjeev Kr Yadav"}, {name: "Suraj Kr Yadav"}] }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "RAJAN", type: "manager", growth: 15, prospects: 0, lastContacted: "2026-04-16", badges: ['🏆'],
+      children: [
+        {
+          name: "(Core Team - Rajan Ji)", type: "group", growth: 8, prospects: 0,
+          children: [
+            { name: "Group A", type: "group", growth: 4, prospects: 0, children: [{name: "Manjit Kumar"}, {name: "Tiath"}, {name: "Madhav Kundi"}, {name: "Balvir Kauldhar"}, {name: "Ashar Singh"}] },
+            { name: "Group B", type: "group", growth: 4, prospects: 0, children: [{name: "Sandeep Singh"}, {name: "Dr. Jasvir Kumar"}, {name: "Rakesh Akalpur"}, {name: "Rajni Goraya"}, {name: "Dalbir Chand"}] }
+          ]
+        },
+        {
+          name: "RAVINDER", type: "manager", growth: 7, prospects: 0, lastContacted: "2026-03-25",
+          children: [
+            { name: "Group A", type: "group", growth: 4, prospects: 0, children: [{name: "Kuldeep Kumar Kandola"}, {name: "Sukhjit Kaur Partappura"}, {name: "Sarabjit Kaur Nurmahal"}, {name: "Harjinder Kumar"}, {name: "Satwinder Singh Kandola"}] },
+            { name: "Group B", type: "group", growth: 3, prospects: 0, children: [{name: "Amritpal Kaur Nurmahal"}, {name: "Khushdeep Nurmahal"}, {name: "Narinderpal Singh Chuheki"}, {name: "Nihal Kaur"}, {name: "Narinder Kaur Pharwala"}] }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// --- Helpers ---
+const calculateTotalTeamSize = (node) => {
+  if (!node.children || node.children.length === 0) return 1;
+  return node.children.reduce((acc, child) => acc + calculateTotalTeamSize(child), 0);
+};
+
+const isNeedsFollowUp = (lastContacted) => {
+  if (!lastContacted) return false;
+  const daysSince = (new Date() - new Date(lastContacted)) / (1000 * 3600 * 24);
+  return daysSince > 14; 
+};
+
+const extractLeaderboard = (node, list = []) => {
+  if (node.type === 'manager' || node.type === 'group') {
+    const teamSize = calculateTotalTeamSize(node);
+    const actualGrowth = Math.min(node.growth || 0, teamSize); // Failsafe cap
+    list.push({ name: node.name, growth: actualGrowth, size: teamSize, type: node.type });
+  }
+  if (node.children) {
+    node.children.forEach(child => extractLeaderboard(child, list));
+  }
+  return list.sort((a, b) => b.growth - a.growth).slice(0, 10);
+};
+
+// Recursive helper to add a new node
+const addNodeToTree = (currentTree, parentName, newNode) => {
+  if (currentTree.name === parentName) {
+    return {
+      ...currentTree,
+      children: [...(currentTree.children || []), newNode]
+    };
+  }
+  if (currentTree.children) {
+    return {
+      ...currentTree,
+      children: currentTree.children.map(child => addNodeToTree(child, parentName, newNode))
+    };
+  }
+  return currentTree;
+};
+
+// --- Gemini API Logic ---
+const generateWithGemini = async (prompt) => {
+  const apiKey = ""; 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  const payload = { contents: [{ parts: [{ text: prompt }] }] };
+
+  const fetchWithRetry = async (retries = 3, delay = 1000) => {
+    try {
+      const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "No content generated.";
+    } catch (error) {
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, delay));
+        return fetchWithRetry(retries - 1, delay * 2);
+      }
+      throw error;
+    }
+  };
+  return fetchWithRetry();
+};
+
+// --- Tree Node Component ---
+const TreeNode = ({ node, defaultExpanded, searchTerm, onAiAction, onAddAction, loadingNodeName }) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const hasChildren = node.children && node.children.length > 0;
+  const needsFollowUp = isNeedsFollowUp(node.lastContacted);
+
+  useEffect(() => {
+    if (searchTerm) setIsExpanded(true);
+    else setIsExpanded(defaultExpanded);
+  }, [searchTerm, defaultExpanded]);
+
+  const getIcon = () => {
+    if (node.type === 'root') return <Building2 className="w-5 h-5 text-amber-300" />;
+    if (node.type === 'manager') return <User className="w-4 h-4 text-amber-500" />;
+    if (node.type === 'group') return <Users className="w-4 h-4 text-blue-300" />;
+    return <User className="w-4 h-4 text-slate-500" />;
+  };
+
+  const highlightText = (text, highlight) => {
+    if (!highlight.trim()) return text;
+    const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+    return parts.map((part, index) => 
+      part.toLowerCase() === highlight.toLowerCase() ? <span key={index} className="bg-amber-500/30 text-amber-200 px-1 rounded">{part}</span> : part
+    );
+  };
+
+  const isLoadingThisNode = loadingNodeName === node.name;
+  const teamSize = calculateTotalTeamSize(node);
+  const displayGrowth = Math.min(node.growth || 0, teamSize);
+
+  return (
+    <div className="ml-2 sm:ml-6 mt-1">
+      <div 
+        className={`flex items-center justify-between py-2 px-3 border transition-all duration-200 group rounded-lg
+          ${hasChildren ? 'cursor-pointer hover:bg-[#152340] border-b-amber-500/10 border-t-transparent border-l-transparent border-r-transparent' : 'bg-[#0c1527] border border-amber-500/5 shadow-inner'}
+          ${needsFollowUp ? 'border-l-red-500/50 border-l-2' : ''}
+        `}
+        onClick={() => hasChildren && setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center justify-center w-5 h-5 mr-1 shrink-0">
+            {hasChildren ? (
+              isExpanded ? <ChevronDown className="w-4 h-4 text-amber-500/60" /> : <ChevronRight className="w-4 h-4 text-amber-500/60" />
+            ) : <div className="w-4 h-4" />}
+          </div>
+          
+          <div className="bg-[#1a2c4e]/50 p-1.5 rounded shadow-sm border border-amber-500/20 shrink-0 relative">
+            {getIcon()}
+            {needsFollowUp && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            )}
+          </div>
+          
+          <span className={`text-sm sm:text-base tracking-wide flex items-center gap-1 ${hasChildren ? 'font-semibold text-amber-50' : 'text-blue-200'}`}>
+            {highlightText(node.name, searchTerm)}
+            {node.badges && node.badges.map((b, i) => <span key={i} className="text-sm">{b}</span>)}
+          </span>
+
+          {hasChildren && (
+            <div className="flex items-center ml-2 gap-2 flex-wrap">
+              <span className="hidden sm:inline-block text-[10px] uppercase tracking-wider font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded">
+                Team: {teamSize}
+              </span>
+              {displayGrowth > 0 && (
+                <span className="text-[10px] uppercase tracking-wider font-bold bg-green-500/10 text-green-400 border border-green-500/30 px-2 py-0.5 rounded flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" /> +{displayGrowth}
+                </span>
+              )}
+              {node.prospects > 0 && (
+                <span className="text-[10px] uppercase tracking-wider font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded">
+                  {node.prospects} Prospects
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 shrink-0">
+          {(node.type === 'root' || node.type === 'manager' || node.type === 'group') && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onAddAction(node); }}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-[#0f1932] hover:bg-green-500/20 text-green-400 border border-green-500/30 transition-colors"
+              title="Add New Sub-Team or Member"
+            >
+              <UserPlus className="w-3 h-3" /> <span className="hidden md:inline">Add</span>
+            </button>
+          )}
+
+          {hasChildren && node.type !== 'root' && (
+            <>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onAiAction(node, 'pitch'); }}
+                disabled={isLoadingThisNode}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-[#0f1932] hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 transition-colors"
+              >
+                <Target className="w-3 h-3" /> <span className="hidden md:inline">Pitch</span>
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onAiAction(node, 'motivate'); }}
+                disabled={isLoadingThisNode}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-[#0f1932] hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-colors"
+              >
+                {isLoadingThisNode ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                <span className="hidden md:inline">Message</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {hasChildren && isExpanded && (
+        <div className="border-l border-amber-500/20 ml-4 pl-2 mt-1">
+          {node.children.map((child, index) => (
+            <TreeNode 
+              key={`${child.name}-${index}`} 
+              node={child} 
+              defaultExpanded={defaultExpanded}
+              searchTerm={searchTerm}
+              onAiAction={onAiAction}
+              onAddAction={onAddAction}
+              loadingNodeName={loadingNodeName}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+// --- Main Application Component ---
+export default function App() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [expandAll, setExpandAll] = useState(true);
+  
+  // App States & Data
+  const [treeData, setTreeData] = useState(defaultOrgData);
+  const [user, setUser] = useState(null);
+  const [isDbConnected, setIsDbConnected] = useState(false);
+  const [dbInstance, setDbInstance] = useState(null);
+  const [appIdInstance, setAppIdInstance] = useState('default-app-id');
+
+  // AI & UI States
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiResultText, setAiResultText] = useState("");
+  const [aiModalTitle, setAiModalTitle] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("Hindi");
+  const [loadingNodeName, setLoadingNodeName] = useState(null);
+  
+  // Feature Modals
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isGoalSimulatorOpen, setIsGoalSimulatorOpen] = useState(false);
+  const [targetGoal, setTargetGoal] = useState(100);
+
+  // Add Member Modal
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addParentNode, setAddParentNode] = useState(null);
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberType, setNewMemberType] = useState("manager");
+
+  // --- FIREBASE INITIALIZATION & SYNC ---
+  useEffect(() => {
+    try {
+      const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+      if (!firebaseConfigStr) {
+        console.warn("No Firebase config found. Running in Local Mode.");
+        return;
+      }
+      
+      const firebaseConfig = JSON.parse(firebaseConfigStr);
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      
+      setDbInstance(db);
+      setAppIdInstance(appId);
+
+      const initAuth = async () => {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      };
+      initAuth();
+
+      const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+        setUser(u);
+        if (u) {
+          // Rule 1 & 2: Listen to specific private user document for the org tree
+          const docRef = doc(db, 'artifacts', appId, 'users', u.uid, 'orgData', 'mainTree');
+          
+          const unsubscribeDb = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+              setTreeData(docSnap.data().tree);
+              setIsDbConnected(true);
+            } else {
+              // Seed the database if it's the user's first time
+              setDoc(docRef, { tree: defaultOrgData }).catch(console.error);
+              setTreeData(defaultOrgData);
+              setIsDbConnected(true);
+            }
+          }, (error) => {
+            console.error("Firestore Listen Error:", error);
+            setIsDbConnected(false);
+          });
+          
+          return () => unsubscribeDb();
+        }
+      });
+
+      return () => unsubscribeAuth();
+    } catch (e) {
+      console.error("Firebase Setup Error:", e);
+    }
+  }, []);
+
+  // --- DATA PROCESSING ---
+  const leaderboardData = useMemo(() => extractLeaderboard(treeData), [treeData]);
+
+  const filteredData = useMemo(() => {
+    if (!searchTerm.trim()) return treeData;
+    const filterTree = (node) => {
+      const matches = node.name.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!node.children) return matches ? node : null;
+      const filteredChildren = node.children.map(child => filterTree(child)).filter(child => child !== null);
+      if (matches || filteredChildren.length > 0) {
+        return { ...node, children: filteredChildren.length > 0 ? filteredChildren : node.children };
+      }
+      return null;
+    };
+    return filterTree(treeData);
+  }, [searchTerm, treeData]);
+
+
+  // --- ACTIONS ---
+  const handleSaveNewMember = async () => {
+    if (!newMemberName.trim() || !addParentNode) return;
+    
+    const newNode = {
+      name: newMemberName.trim(),
+      type: newMemberType,
+      growth: 0,
+      prospects: 0,
+      children: []
+    };
+
+    // Calculate new tree
+    const updatedTree = addNodeToTree(treeData, addParentNode.name, newNode);
+    
+    // Update local state immediately for snappy UI
+    setTreeData(updatedTree);
+    
+    // Sync to Cloud DB
+    if (user && dbInstance && isDbConnected) {
+      try {
+        const docRef = doc(dbInstance, 'artifacts', appIdInstance, 'users', user.uid, 'orgData', 'mainTree');
+        await setDoc(docRef, { tree: updatedTree });
+      } catch (error) {
+        console.error("Error saving to cloud:", error);
+        alert("Saved locally, but failed to sync to cloud.");
+      }
+    }
+
+    setIsAddModalOpen(false);
+    setNewMemberName("");
+  };
+
+  const handleAiAction = async (node, type) => {
+    setLoadingNodeName(node.name);
+    const childNames = node.children.map(c => c.name).join(", ");
+    let prompt = "";
+    let title = "";
+
+    if (type === 'motivate') {
+      prompt = `You are an HR consultant for "RCM Business, Team HHG, Code90x". Write an inspiring team update from leader "${node.name}" to their direct sub-teams: ${childNames}. Language: MUST be strictly in ${selectedLanguage}. Tone: Enthusiastic, visionary. Structure: Subject line, Greeting, 2 short paragraphs on goals/teamwork, Sign-off. Keep under 150 words. No markdown blocks.`;
+      title = `✨ Message from ${node.name} (${selectedLanguage})`;
+    } else if (type === 'pitch') {
+      prompt = `You are a top network marketer for "RCM Business, Team HHG, Code90x". Write a highly persuasive pitch script for leader "${node.name}" to send to new PROSPECTS to convince them to join the network. Language: MUST be strictly in ${selectedLanguage}. Focus points: Financial freedom, strong support system (Code90x), passive income. Keep it conversational, exciting, under 120 words. No markdown blocks.`;
+      title = `🎯 Prospecting Pitch for ${node.name} (${selectedLanguage})`;
+    }
+
+    try {
+      const responseText = await generateWithGemini(prompt);
+      setAiModalTitle(title);
+      setAiResultText(responseText);
+      setIsAiModalOpen(true);
+    } catch (error) {
+      alert("Failed to generate content. Please try again.");
+    } finally {
+      setLoadingNodeName(null);
+    }
+  };
+
+  const openWhatsApp = () => {
+    const encodedText = encodeURIComponent(aiResultText);
+    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 bg-gradient-to-br from-blue-950 via-[#050b14] to-black font-sans relative overflow-hidden flex flex-col items-center py-0 sm:py-8 px-0 sm:px-4 text-blue-50">
+      
+      {/* Background Watermark */}
+      <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-0 opacity-[0.03]">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" className="w-[120vw] sm:w-[90vw] max-w-[800px] text-amber-500">
+          <path d="M200 40 L340 120 L340 280 L200 360 L60 280 L60 120 Z" stroke="currentColor" strokeWidth="12" fill="none"/>
+          <text x="200" y="215" fontFamily="sans-serif" fontSize="64" fontWeight="900" textAnchor="middle" fill="currentColor">RCM</text>
+          <text x="200" y="255" fontFamily="sans-serif" fontSize="20" fontWeight="700" letterSpacing="8" textAnchor="middle" fill="currentColor">CODE90X</text>
+        </svg>
+      </div>
+
+      <div className="w-full max-w-6xl bg-[#0a1122]/80 backdrop-blur-xl shadow-[0_0_50px_-15px_rgba(245,158,11,0.2)] border border-amber-500/20 relative z-10 sm:rounded-2xl overflow-hidden flex flex-col">
+        
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-[#0b1428] via-[#0f1932] to-[#0b1428] border-b border-amber-500/30 p-4 sm:p-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-amber-400 to-amber-600 p-2 rounded-lg shadow-lg shadow-amber-500/20">
+                    <Building2 className="w-6 h-6 sm:w-7 sm:h-7 text-[#0a1122]" />
+                  </div>
+                  <span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500">RCM Business</span> 
+                    <span className="text-amber-500/40 font-light ml-2 text-xl hidden sm:inline">| Team HHG</span>
+                  </span>
+                </h1>
+              </div>
+              <div className="flex items-center gap-3 mt-2">
+                <p className="text-xs sm:text-sm text-amber-200/60 font-semibold tracking-widest uppercase">Network Growth App</p>
+                {/* Cloud Sync Status Indicator */}
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/30 border border-white/5" title={isDbConnected ? "Connected to Cloud Database" : "Offline / Local Mode"}>
+                  {isDbConnected ? <Cloud className="w-3.5 h-3.5 text-green-400" /> : <CloudOff className="w-3.5 h-3.5 text-red-400" />}
+                  <span className="text-[10px] uppercase font-bold text-slate-400">{isDbConnected ? "Cloud Sync On" : "Local Mode"}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+              <div className="flex items-center bg-[#0c1527] border border-amber-500/30 rounded px-2">
+                <Globe className="w-4 h-4 text-amber-500/60" />
+                <select 
+                  value={selectedLanguage} 
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="bg-transparent text-amber-200 text-sm font-semibold p-2 outline-none cursor-pointer"
+                >
+                  <option value="Hindi">Hindi</option>
+                  <option value="English">English</option>
+                  <option value="Punjabi">Punjabi</option>
+                  <option value="Marathi">Marathi</option>
+                </select>
+              </div>
+
+              <button onClick={() => setIsGoalSimulatorOpen(true)} className="flex items-center gap-2 bg-[#0f1932] hover:bg-[#1a2c4e] text-blue-300 border border-blue-500/30 px-3 py-2 rounded text-sm font-semibold transition-colors">
+                <Calculator className="w-4 h-4" /> <span className="hidden sm:inline">Simulator</span>
+              </button>
+
+              <button onClick={() => setIsLeaderboardOpen(true)} className="flex items-center gap-2 bg-[#0f1932] hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-2 rounded text-sm font-semibold transition-colors">
+                <Trophy className="w-4 h-4 text-amber-500" /> <span className="hidden sm:inline">Leaderboard</span>
+              </button>
+
+              <button onClick={() => setExpandAll(!expandAll)} className="flex items-center justify-center bg-[#0f1932] hover:bg-[#1a2c4e] text-amber-400 border border-amber-500/30 w-10 h-10 rounded transition-colors" title="Toggle Expand">
+                {expandAll ? <MinusSquare className="w-5 h-5" /> : <PlusSquare className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 relative">
+            <Search className="absolute left-4 top-3.5 h-5 w-5 text-amber-500/60" />
+            <input
+              type="text"
+              className="block w-full pl-12 pr-4 py-3 border border-amber-500/30 rounded-lg bg-[#0c1527] text-amber-50 placeholder-amber-500/40 focus:outline-none focus:ring-2 focus:ring-amber-500/60 transition-all shadow-inner"
+              placeholder="Search leader, group, or prospect..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Main Tree Area */}
+        <div className="p-4 sm:p-6 bg-[#0a1122]/50 min-h-[500px] overflow-x-auto">
+          {filteredData ? (
+            <div className="min-w-[600px] pb-12">
+              <TreeNode 
+                node={filteredData} 
+                defaultExpanded={expandAll} 
+                searchTerm={searchTerm}
+                onAiAction={handleAiAction}
+                onAddAction={(node) => { setAddParentNode(node); setIsAddModalOpen(true); }}
+                loadingNodeName={loadingNodeName}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-amber-500/60 py-16">
+              <Search className="w-16 h-16 opacity-20 mb-4" />
+              <p className="text-xl font-semibold">No records found</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ---------------- MODALS ---------------- */}
+
+      {/* Add New Member/Group Modal */}
+      {isAddModalOpen && addParentNode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0a1122] border border-green-500/40 rounded-2xl shadow-[0_0_40px_-10px_rgba(34,197,94,0.3)] w-full max-w-md flex flex-col">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 flex justify-between items-center text-white rounded-t-2xl">
+              <h2 className="text-lg font-bold flex items-center gap-2"><UserPlus className="w-5 h-5" /> Add to Network</h2>
+              <button onClick={() => setIsAddModalOpen(false)} className="bg-black/20 hover:bg-black/40 p-1 rounded-full"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 bg-[#0f1932]">
+              <p className="text-blue-200/80 text-sm mb-4">Adding a new member under <span className="font-bold text-amber-400">{addParentNode.name}</span></p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-blue-300 font-semibold mb-1">Name</label>
+                  <input 
+                    type="text" 
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                    placeholder="Enter Leader or Team Name"
+                    className="w-full bg-[#0c1527] border border-blue-500/30 p-3 rounded text-white focus:outline-none focus:border-green-400"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-blue-300 font-semibold mb-1">Type</label>
+                  <select 
+                    value={newMemberType}
+                    onChange={(e) => setNewMemberType(e.target.value)}
+                    className="w-full bg-[#0c1527] border border-blue-500/30 p-3 rounded text-white focus:outline-none focus:border-green-400"
+                  >
+                    <option value="manager">Manager / Leader (Can have sub-teams)</option>
+                    <option value="group">Group / Sub-Team</option>
+                    <option value="individual">Individual Prospect</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <button 
+                  onClick={() => setIsAddModalOpen(false)} 
+                  className="flex-1 py-3 bg-[#152340] hover:bg-[#1a2c4e] text-blue-300 font-bold rounded-lg transition-colors border border-blue-500/20"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSaveNewMember} 
+                  disabled={!newMemberName.trim()}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg transition-colors"
+                >
+                  Save & Sync
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Text Generation Modal */}
+      {isAiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0a1122] border border-amber-500/30 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in fade-in zoom-in duration-200">
+            <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 flex justify-between items-center text-[#0a1122] rounded-t-2xl">
+              <h2 className="text-lg font-bold flex items-center gap-2">{aiModalTitle}</h2>
+              <button onClick={() => setIsAiModalOpen(false)} className="bg-white/20 hover:bg-white/40 p-1 rounded-full"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 overflow-y-auto bg-[#0f1932] text-blue-50 whitespace-pre-wrap font-medium leading-relaxed">
+              {aiResultText.replace(/\*\*(.*?)\*\*/g, '$1')}
+            </div>
+            <div className="bg-[#0b1428] border-t border-amber-500/20 p-4 flex justify-between gap-2 rounded-b-2xl">
+              <button onClick={openWhatsApp} className="flex-1 flex justify-center items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transition-colors">
+                <MessageCircle className="w-5 h-5" /> Send via WhatsApp
+              </button>
+              <button onClick={() => { navigator.clipboard.writeText(aiResultText); alert("Copied!"); }} className="flex-1 px-4 py-2 bg-[#1a2c4e] hover:bg-[#233a66] text-amber-400 font-bold rounded-lg border border-amber-500/30 transition-colors">
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leaderboard Modal */}
+      {isLeaderboardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0a1122] border border-amber-500/30 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-400 p-4 flex justify-between items-center text-[#0a1122] rounded-t-2xl">
+              <h2 className="text-xl font-black flex items-center gap-2"><Trophy className="w-6 h-6" /> Top Performers (30 Days)</h2>
+              <button onClick={() => setIsLeaderboardOpen(false)} className="bg-black/10 hover:bg-black/20 p-1 rounded-full"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-4 overflow-y-auto bg-[#0f1932] flex flex-col gap-2 rounded-b-2xl">
+              {leaderboardData.map((team, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-[#152340] p-3 rounded-lg border border-amber-500/10">
+                  <div className="flex items-center gap-3">
+                    <span className={`font-bold text-lg w-6 text-center ${idx===0?'text-yellow-400':idx===1?'text-slate-300':idx===2?'text-amber-600':'text-blue-500/50'}`}>
+                      #{idx + 1}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-amber-50">{team.name}</p>
+                      <p className="text-xs text-blue-300/60 uppercase">Team Size: {team.size}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-green-400 font-bold flex items-center justify-end gap-1"><TrendingUp className="w-3 h-3"/> +{team.growth}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Goal Simulator Modal */}
+      {isGoalSimulatorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0a1122] border border-blue-500/30 rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center text-white rounded-t-2xl">
+              <h2 className="text-xl font-bold flex items-center gap-2"><Calculator className="w-6 h-6" /> Growth Simulator</h2>
+              <button onClick={() => setIsGoalSimulatorOpen(false)} className="bg-white/20 p-1 rounded-full"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 bg-[#0f1932] rounded-b-2xl">
+              <p className="text-blue-200 text-sm mb-4">Set a target for your total network size and see how much effort is required.</p>
+              <label className="block text-amber-400 font-semibold mb-2">Target Team Size:</label>
+              <input 
+                type="number" 
+                value={targetGoal} 
+                onChange={(e) => setTargetGoal(Number(e.target.value))}
+                className="w-full bg-[#0c1527] border border-blue-500/30 p-3 rounded text-white text-lg font-bold mb-6 focus:outline-none focus:border-blue-400"
+              />
+              
+              <div className="bg-[#152340] p-4 rounded-lg border border-blue-500/10">
+                <div className="flex justify-between mb-2">
+                  <span className="text-blue-300">Current Total Size:</span>
+                  <span className="font-bold text-white">{calculateTotalTeamSize(treeData)}</span>
+                </div>
+                <div className="flex justify-between mb-4 border-b border-blue-500/20 pb-4">
+                  <span className="text-blue-300">Deficit:</span>
+                  <span className="font-bold text-amber-400">
+                    {targetGoal > calculateTotalTeamSize(treeData) ? targetGoal - calculateTotalTeamSize(treeData) : 0} needed
+                  </span>
+                </div>
+                
+                {targetGoal > calculateTotalTeamSize(treeData) && (
+                  <div className="pt-2">
+                    <p className="text-sm text-blue-200 mb-2 font-semibold">Suggested Action Plan:</p>
+                    <ul className="text-xs text-blue-300/80 space-y-2">
+                      <li className="flex items-center gap-2"><Send className="w-3 h-3 text-purple-400"/> Send Pitches to pending prospects.</li>
+                      <li className="flex items-center gap-2"><AlertCircle className="w-3 h-3 text-red-400"/> Follow up with dormant legs.</li>
+                      <li className="flex items-center gap-2"><Trophy className="w-3 h-3 text-amber-400"/> Motivate top growers to push harder.</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

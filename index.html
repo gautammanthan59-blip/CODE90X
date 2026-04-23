@@ -189,14 +189,15 @@
 
         // --- AI API Logic ---
         const generateWithGemini = async (prompt) => {
-          // ⚠️ IMPORTANT: Paste your copied API key between the quotes below ⚠️
+          // ⚠️ IMPORTANT: Changed model name to gemini-1.5-flash-latest to resolve the 404 error ⚠️
           const apiKey = "AIzaSyCcfISEjhq6wyzS_8KeWqH_4NRJI0cD4iI"; 
           
           if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
               return "To use the AI features on your own website, you need to add your free Google Gemini API key to the code!\n\n1. Go to aistudio.google.com/app/apikey\n2. Create a free key.\n3. Open index.html in GitHub and replace 'YOUR_API_KEY_HERE' with your actual key on line 175.";
           }
 
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+          // FIX: Changed gemini-1.5-flash to gemini-1.5-flash-latest 
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
           const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
           try {

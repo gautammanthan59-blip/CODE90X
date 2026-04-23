@@ -206,12 +206,15 @@
                   body: JSON.stringify(payload) 
               });
               
-              if (!response.ok) throw new Error(`API Error: ${response.status}`);
+              if (!response.ok) {
+                  const errorData = await response.json().catch(() => ({}));
+                  throw new Error(`Code ${response.status}: ${errorData.error?.message || response.statusText}`);
+              }
               const data = await response.json();
               return data.candidates?.[0]?.content?.parts?.[0]?.text || "No content generated.";
           } catch (error) {
               console.error(error);
-              return "Error connecting to AI. Please verify your API key is correct and active.";
+              return `AI Connection Error: ${error.message}\n\n(Note: If it says "Failed to fetch", please turn off your Ad Blocker or Brave Shields for this site!)`;
           }
         };
 
